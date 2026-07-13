@@ -334,11 +334,11 @@ Writer 必须遵守：
 
 ### 阶段 A：确认现有 rag-agent 能力
 
-- [ ] 确认 `GET /api/novels` 能返回小说列表
-- [ ] 确认 `GET /api/novel-characters` 能返回角色 profile
-- [ ] 确认 `indexer.getCharacterProfiles()` 可用
-- [ ] 确认 `embedder.search()` 支持按 `docId` 检索
-- [ ] 确认已有小说的 `chapterSummaries` 可用
+- [x] 确认 `GET /api/novels` 能返回小说列表
+- [x] 确认 `GET /api/novel-characters` 能返回角色 profile
+- [x] 确认 `indexer.getCharacterProfiles()` 可用
+- [x] 确认 `embedder.search()` 支持按 `docId` 检索
+- [x] 确认已有小说的 `chapterSummaries` 可用
 
 验收标准：
 
@@ -347,13 +347,13 @@ Writer 必须遵守：
 
 ### 阶段 B：实现 rag-agent `/api/story-context`
 
-- [ ] 在 `rag-agent/rag/indexer.js` 新增 `getStoryContext(options)`
-- [ ] 在 `getStoryContext()` 中读取 doc、profiles、relationships、summaries
-- [ ] 在 `getStoryContext()` 中调用 `embedder.search()`
-- [ ] 对 `relevantScenes` 做字段裁剪和长度限制
-- [ ] 在 `rag-agent/server.js` 新增 `POST /api/story-context`
-- [ ] 增加参数校验：`novelId` 必填，`query` 可选，`topK` 默认 5
-- [ ] 增加错误返回：小说不存在、分析中、无 profile
+- [x] 在 `rag-agent/rag/indexer.js` 新增 `getStoryContext(options)`
+- [x] 在 `getStoryContext()` 中读取 doc、profiles、relationships、summaries
+- [x] 在 `getStoryContext()` 中调用 `embedder.search()`
+- [x] 对 `relevantScenes` 做字段裁剪和长度限制
+- [x] 在 `rag-agent/server.js` 新增 `POST /api/story-context`
+- [x] 增加参数校验：`novelId` 必填，`query` 可选，`topK` 默认 5
+- [x] 增加错误返回：小说不存在、分析中、无 profile
 
 验收标准：
 
@@ -525,4 +525,3 @@ Writer 必须遵守：
 - [ ] RAG 失败时可降级生成
 - [ ] API 调用链清晰，无重复小接口拼装
 - [ ] 代码中有清晰的错误处理和调试日志
-

@@ -292,6 +292,116 @@ class Indexer {
     return doc?.chapterSummaries || [];
   }
 
+  /**
+   * 为 Story-game 聚合故事生成上下文。
+   *
+   * 只做结构化上下文检索，不调用 LLM：
+   * - 角色 profile：作为硬约束
+   * - 人物关系：作为关系约束
+   * - 原著相关片段：作为 Writer 的场景/语气/关系氛围参考
+   * - 章节摘要：作为轻量背景
+   *
+   * @param {{novelId: string, characters?: string[], query?: string, topK?: number}} options
+   * @returns {{novelId, title, characterProfiles, relationships, chapterSummaries, relevantScenes}}
+   */
+  getStoryContext(options) {
+    const novelId = options?.novelId;
+    const doc = this.getDocument(novelId);
+    if (!doc) {
+      const err = new Error('小说不存在');
+      err.statusCode = 404;
+      throw err;
+    }
+    if (doc.docType !== 'novel') {
+      const err = new Error('该文档不是小说类型');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (doc.analyzing) {
+      const err = new Error('小说仍在分析中');
+      err.statusCode = 202;
+      throw err;
+    }
+
+    const allProfiles = this.getCharacterProfiles(novelId);
+    if (!allProfiles) {
+      const err = new Error('角色 profile 尚未生成');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const requestedCharacters = Array.isArray(options.characters)
+      ? options.characters.map(n => String(n || '').trim()).filter(Boolean)
+      : [];
+    const requestedSet = new Set(requestedCharacters);
+
+    const characterProfiles = requestedCharacters.length
+      ? allProfiles.filter(p => requestedSet.has(p.name))
+      : allProfiles;
+
+    const relationships = (doc.relationships || []).filter(r => {
+      if (!requestedCharacters.length) return true;
+      return requestedSet.has(r.from) || requestedSet.has(r.to);
+    });
+
+    const topK = Math.max(1, Math.min(Number(options.topK) || 5, 8));
+    const queryParts = [
+      options.query || '',
+      requestedCharacters.join(' '),
+      characterProfiles.map(p => [
+        p.name,
+        p.personality,
+        p.speech,
+        p.handlingStyle,
+        p.relationships,
+        p.keyEvents
+      ].filter(Boolean).join(' ')).join(' ')
+    ].filter(Boolean);
+    const query = queryParts.join('\n').trim() || doc.name;
+
+    const searchResults = embedder.search(
+      query,
+      topK,
+      'novel',
+      {
+        characters: doc.characters || [],
+        relationships: doc.relationships || []
+      },
+      novelId
+    );
+
+    const relevantScenes = searchResults.map(r => ({
+      chapterIndex: r.chunk.chapterIndex,
+      chapterTitle: r.chunk.chapterTitle || '',
+      text: this._trimText(r.chunk.text, 600),
+      score: Number(r.score.toFixed(4)),
+      layer: r.layer || r.chunk.chunkType || 'content'
+    }));
+
+    const relevantChapterIndices = new Set(
+      relevantScenes
+        .map(s => s.chapterIndex)
+        .filter(i => typeof i === 'number')
+    );
+    const selectedSummaries = (doc.chapterSummaries || [])
+      .filter(s => relevantChapterIndices.size === 0 || relevantChapterIndices.has(s.chapterIndex))
+      .slice(0, 5)
+      .map(s => ({
+        chapterIndex: s.chapterIndex,
+        title: s.title,
+        summary: this._trimText(s.summary, 300)
+      }));
+
+    return {
+      novelId,
+      title: doc.name,
+      characterProfiles,
+      relationships,
+      chapterSummaries: selectedSummaries,
+      relevantScenes
+    };
+  }
+
   clearAll() {
     this.documents = [];
     embedder.buildIndex([]);
@@ -388,6 +498,12 @@ class Indexer {
     } catch (err) {
       console.error(`[Indexer] 保存索引失败: ${err.message}`);
     }
+  }
+
+  _trimText(text, maxLength) {
+    const value = String(text || '').replace(/\s+/g, ' ').trim();
+    if (value.length <= maxLength) return value;
+    return value.slice(0, maxLength) + '...';
   }
 
 }

@@ -305,6 +305,28 @@ app.get('/api/novel-characters', (req, res) => {
   });
 });
 
+// 获取故事生成上下文（供 Story-game Writer 调用）
+app.post('/api/story-context', (req, res) => {
+  const { novelId, characters, query, topK } = req.body || {};
+  if (!novelId) return res.status(400).json({ error: 'novelId 为必填' });
+
+  try {
+    const context = indexer.getStoryContext({
+      novelId,
+      characters: Array.isArray(characters) ? characters : [],
+      query: typeof query === 'string' ? query : '',
+      topK
+    });
+    res.json(context);
+  } catch (err) {
+    const status = err.statusCode || 500;
+    res.status(status).json({
+      error: err.message || '获取故事上下文失败',
+      analyzing: status === 202
+    });
+  }
+});
+
 // 获取文档分析状态（供前端轮询）
 app.get('/documents/:id/status', (req, res) => {
   const doc = indexer.getDocument(req.params.id);

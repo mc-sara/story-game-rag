@@ -1,0 +1,17 @@
+{
+  "name": "rag-agent",
+  "version": "1.0.0",
+  "description": "A RAG Agent demo project using MiMo online model with TF-IDF retrieval",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "iconv-lite": "^0.6.3",
+    "multer": "^1.4.5-lts.1",
+    "natural": "^6.10.4"
+  }
+}

@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同人文互动</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Georgia', 'Noto Serif SC', serif;
+      background: #0e0e10;
+      color: #e8e4df;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 背景纹理 */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(60, 30, 80, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(30, 50, 100, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+      padding: 40px 24px;
+    }
+
+    /* 标题 */
+    .app-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .app-title h1 {
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: 8px;
+      color: #c9b89a;
+      text-transform: uppercase;
+    }
+
+    .app-title p {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #6b6355;
+      letter-spacing: 2px;
+    }
+
+    /* 输入区域 */
+    .input-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(201, 184, 154, 0.15);
+      border-radius: 2px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+
+    .input-label {
+      font-size: 11px;
+      color: #6b6355;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 360px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.2);
+      color: #e8e4df;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.9;
+      resize: vertical;
+      outline: none;
+      padding: 8px 0;
+    }
+
+    textarea::placeholder {
+      color: #4a453d;
+    }
+
+    textarea:focus {
+      border-bottom-color: rgba(201, 184, 154, 0.5);
+    }
+
+    .input-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    /* 按钮 */
+    .btn {
+      padding: 10px 28px;
+      font-size: 13px;
+      letter-spacing: 3px;
+      border: 1px solid rgba(201, 184, 154, 0.4);
+      background: transparent;
+      color: #c9b89a;
+      cursor: pointer;
+      transition: all 0.25s;
+      font-family: inherit;
+    }
+
+    .btn:hover {
+      background: rgba(201, 184, 154, 0.1);
+      border-color: #c9b89a;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* 故事卡片 */
+    .story-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(201, 184, 154, 0.12);
+      border-radius: 2px;
+      padding: 32px 28px;
+      animation: fadeIn 0.6s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .story-card.ending {
+      border-color: rgba(201, 184, 154, 0.25);
+      text-align: center;
+    }
+
+    .scene-title {
+      font-size: 11px;
+      color: #8a7a65;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.1);
+    }
+
+    .narrative {
+      font-size: 15px;
+      line-height: 2;
+      color: #d4cfc8;
+      margin-bottom: 32px;
+      white-space: pre-wrap;
+    }
+
+    /* 选项 */
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .choice-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 20px;
+      text-align: left;
+      font-size: 14px;
+      font-family: inherit;
+      background: rgba(201, 184, 154, 0.04);
+      border: 1px solid rgba(201, 184, 154, 0.12);
+      color: #c9b89a;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .choice-btn:hover {
+      background: rgba(201, 184, 154, 0.1);
+      border-color: rgba(201, 184, 154, 0.3);
+    }
+
+    .choice-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* 结局 */
+    .ending-divider {
+      width: 60px;
+      height: 1px;
+      background: rgba(201, 184, 154, 0.3);
+      margin: 28px auto;
+    }
+
+    .ending-text {
+      font-size: 13px;
+      color: #8a7a65;
+      letter-spacing: 1px;
+      margin-top: 8px;
+      line-height: 1.8;
+    }
+
+    /* 加载状态 */
+    .loading {
+      text-align: center;
+      padding: 60px 0;
+      color: #6b6355;
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+
+    .loading-dot::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* 错误 */
+    .error-msg {
+      color: #c97070;
+      font-size: 13px;
+      text-align: left;
+      padding: 20px;
+      border: 1px solid rgba(201, 112, 112, 0.2);
+      margin-top: 16px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* 页脚 */
+    .story-footer {
+      display: flex;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .btn-ghost {
+      padding: 8px 20px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      border: none;
+      background: transparent;
+      color: #6b6355;
+      cursor: pointer;
+      transition: color 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-ghost:hover {
+      color: #c9b89a;
+    }
+
+    /* 重新开始（居中大按钮） */
+    .restart-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 32px;
+    }
+
+    .btn-restart {
+      padding: 12px 36px;
+      font-size: 13px;
+      letter-spacing: 4px;
+      border: 1px solid rgba(201, 184, 154, 0.5);
+      background: rgba(201, 184, 154, 0.06);
+      color: #c9b89a;
+      cursor: pointer;
+      transition: all 0.25s;
+      font-family: inherit;
+    }
+
+    .btn-restart:hover {
+      background: rgba(201, 184, 154, 0.15);
+    }
+
+    .radio-label {
+      font-size: 13px;
+      color: #8a7a65;
+      transition: color 0.2s;
+    }
+
+    input[type="radio"]:checked + .radio-label {
+      color: #e8d5b0;
+      font-weight: 600;
+    }
+
+    /* ── 章节进度条 ── */
+    .chapter-progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 0 4px;
+    }
+
+    .chapter-label {
+      font-size: 12px;
+      color: #6b6355;
+      letter-spacing: 2px;
+    }
+
+    .chapter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chapter-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .chapter-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(201, 184, 154, 0.2);
+      transition: background 0.3s;
+    }
+
+    .chapter-dot.done {
+      background: rgba(201, 184, 154, 0.6);
+    }
+
+    .chapter-dot.current {
+      background: #c9b89a;
+    }
+
+    /* ── 记忆卡 ── */
+    .memory-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(201, 184, 154, 0.08);
+      border: 1px solid rgba(201, 184, 154, 0.2);
+      color: #6b6355;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .memory-toggle:hover {
+      background: rgba(201, 184, 154, 0.15);
+      color: #c9b89a;
+    }
+
+    .memory-toggle.active {
+      background: rgba(201, 184, 154, 0.2);
+      border-color: rgba(201, 184, 154, 0.4);
+      color: #c9b89a;
+    }
+
+    .memory-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100vh;
+      background: rgba(16, 14, 18, 0.97);
+      border-left: 1px solid rgba(201, 184, 154, 0.12);
+      padding: 64px 24px 40px;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 99;
+    }
+
+    .memory-panel.open {
+      transform: translateX(0);
+    }
+
+    .memory-panel-title {
+      font-size: 11px;
+      color: #6b6355;
+      letter-spacing: 3px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .memory-section {
+      margin-bottom: 24px;
+    }
+
+    .memory-section-label {
+      font-size: 10px;
+      color: #4a453d;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .memory-bible-title {
+      font-size: 16px;
+      color: #c9b89a;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    .memory-bible-genre {
+      font-size: 12px;
+      color: #6b6355;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .memory-bible-logline {
+      font-size: 13px;
+      color: #8a7a65;
+      line-height: 1.7;
+    }
+
+    .memory-item {
+      font-size: 12px;
+      color: #8a7a65;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.06);
+      line-height: 1.6;
+    }
+
+    .memory-thread {
+      font-size: 12px;
+      color: #8a7a65;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.06);
+      line-height: 1.6;
+    }
+
+    .memory-thread::before {
+      content: '◆ ';
+      color: rgba(201, 184, 154, 0.4);
+      font-size: 10px;
+    }
+
+    .memory-choice {
+      font-size: 12px;
+      color: #6b6355;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.04);
+      line-height: 1.5;
+    }
+
+    .memory-choice-num {
+      color: #4a453d;
+      margin-right: 6px;
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* ── Tab 切换 ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.15);
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      border: none;
+      background: transparent;
+      color: #4a453d;
+      cursor: pointer;
+      transition: color 0.2s;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      font-family: inherit;
+    }
+
+    .tab-btn.active {
+      color: #c9b89a;
+      border-bottom-color: #c9b89a;
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: #8a7a65;
+    }
+
+    /* ── 小说面板 ── */
+    .novel-panel {
+      display: none;
+    }
+
+    .novel-panel.active {
+      display: block;
+    }
+
+    .novel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .novel-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(201, 184, 154, 0.15);
+      border-radius: 2px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .novel-card:hover {
+      border-color: rgba(201, 184, 154, 0.35);
+      background: rgba(201, 184, 154, 0.05);
+    }
+
+    .novel-card.analyzing {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .novel-card-left .novel-title {
+      font-size: 14px;
+      color: #c9b89a;
+      letter-spacing: 1px;
+    }
+
+    .novel-card-left .novel-date {
+      font-size: 11px;
+      color: #4a453d;
+      margin-top: 4px;
+    }
+
+    .novel-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+    }
+
+    .badge-analyzing {
+      background: rgba(201, 184, 154, 0.1);
+      color: #8a7a65;
+      border: 1px solid rgba(201, 184, 154, 0.2);
+    }
+
+    .badge-ready {
+      background: rgba(150, 200, 150, 0.1);
+      color: #7a9a7a;
+      border: 1px solid rgba(150, 200, 150, 0.2);
+    }
+
+    .novel-empty {
+      text-align: center;
+      padding: 40px 0;
+      color: #4a453d;
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+
+    .novel-empty a {
+      color: #8a7a65;
+      text-decoration: none;
+    }
+
+    .novel-empty a:hover {
+      color: #c9b89a;
+    }
+
+    /* ── 角色选择器 ── */
+    .char-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .char-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(201, 184, 154, 0.12);
+      border-radius: 2px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .char-card.selected-as-hero {
+      border-color: rgba(201, 184, 154, 0.4);
+      background: rgba(201, 184, 154, 0.04);
+    }
+
+    .char-left {
+      flex: 1;
+    }
+
+    .char-name {
+      font-size: 15px;
+      color: #c9b89a;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .char-lock-badge {
+      font-size: 10px;
+      color: #5a7a5a;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .char-detail {
+      font-size: 12px;
+      color: #6b6355;
+      line-height: 1.8;
+    }
+
+    .char-detail div {
+      margin-bottom: 2px;
+    }
+
+    .char-detail-label {
+      color: #4a453d;
+      margin-right: 4px;
+    }
+
+    .char-right {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+      min-width: 100px;
+    }
+
+    .char-check-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .char-check-row label {
+      font-size: 12px;
+      color: #8a7a65;
+      cursor: pointer;
+    }
+
+    .char-check-row input[type="checkbox"] {
+      accent-color: #c9b89a;
+    }
+
+    /* ── 世界观 / 新增角色 ── */
+    .section-label {
+      font-size: 11px;
+      color: #6b6355;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .reference-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(201, 184, 154, 0.08);
+      border-radius: 2px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #5a5248;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .world-transform-wrap textarea {
+      width: 100%;
+      min-height: 80px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.2);
+      color: #e8e4df;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.8;
+      resize: vertical;
+      outline: none;
+      padding: 8px 0;
+    }
+
+    .world-transform-wrap textarea:focus {
+      border-bottom-color: rgba(201, 184, 154, 0.5);
+    }
+
+    .world-transform-wrap textarea::placeholder {
+      color: #4a453d;
+    }
+
+    /* 新增角色 */
+    .new-char-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .new-char-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .new-char-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.2);
+      color: #e8e4df;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 0;
+      outline: none;
+    }
+
+    .new-char-row input:focus {
+      border-bottom-color: rgba(201, 184, 154, 0.5);
+    }
+
+    .new-char-row input::placeholder {
+      color: #4a453d;
+      font-size: 12px;
+    }
+
+    /* 禁止项 */
+    .forbidden-wrap textarea {
+      width: 100%;
+      min-height: 60px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(201, 184, 154, 0.2);
+      color: #e8e4df;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.8;
+      resize: vertical;
+      outline: none;
+      padding: 8px 0;
+    }
+
+    .forbidden-wrap textarea:focus {
+      border-bottom-color: rgba(201, 184, 154, 0.5);
+    }
+
+    .forbidden-wrap textarea::placeholder {
+      color: #4a453d;
+    }
+
+    /* 步骤导航 */
+    .step-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(201, 184, 154, 0.08);
+    }
+
+    .btn-back {
+      padding: 8px 16px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      border: 1px solid rgba(201, 184, 154, 0.2);
+      background: transparent;
+      color: #6b6355;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-back:hover {
+      color: #8a7a65;
+      border-color: rgba(201, 184, 154, 0.3);
+    }
+
+    /* 分析中状态 */
+    .analyzing-overlay {
+      text-align: center;
+      padding: 60px 0;
+      color: #6b6355;
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+
+    .step-indicator {
+      font-size: 11px;
+      color: #4a453d;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    /* 输入卡片内边距调整 */
+    .input-card .tab-bar {
+      margin-top: -4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 记忆卡按钮 -->
+  <button class="memory-toggle" id="memoryToggle" title="记忆卡">≡</button>
+
+  <!-- 记忆卡面板 -->
+  <div class="memory-panel" id="memoryPanel">
+    <div class="memory-panel-title">记忆卡</div>
+    <div id="memoryBibleSection"></div>
+    <div id="memoryThreadsSection"></div>
+    <div id="memoryChoicesSection"></div>
+  </div>
+
+  <div class="app">
+    <div class="app-title">
+      <h1>同人文互动</h1>
+      <p>STORY GAME</p>
+    </div>
+
+    <!-- 输入区域 -->
+    <div class="input-card" id="inputCard">
+      <!-- Tab 切换 -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabManual" onclick="switchTab('manual')">手动输入</button>
+        <button class="tab-btn" id="tabNovel" onclick="switchTab('novel')">选择已有小说</button>
+      </div>
+
+      <!-- 手动输入 Panel -->
+      <div id="panelManual">
+        <label class="input-label">角色与背景设定</label>
+        <textarea
+          id="inputText"
+          placeholder="你的输入应该包含以下内容：
+【世界观】故事发生在理工大学编程课，三周内完成参赛demo，场景包括实验室、教室、食堂等校园场景
+【主角】逐玉（男），理性、慢热、嘴硬心软，擅长Python和FastAPI，编程能力强但不擅长表达情绪
+【核心角色】林澈（女），外冷内热，专业强势，曾经因失败项目留下心理阴影的同班同学
+【画风】（可选）日系galgame，校园青春，柔和光影
+【必出现】（可选）深夜实验室调试；揭开林澈过去的秘密
+【禁止】（可选）穿越、超能力、豪门三角恋..."
+        ></textarea>
+
+        <!-- 叙事节奏 -->
+        <div class="pace-selector" style="margin-top: 18px;">
+          <label class="input-label" style="margin-bottom: 8px;">叙事节奏</label>
+          <div style="display:flex;gap:20px;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="pace" value="fast" style="accent-color:#c9b89a;">
+              <span class="radio-label">快节奏</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="pace" value="normal" checked style="accent-color:#c9b89a;">
+              <span class="radio-label">标准节奏</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="pace" value="slow" style="accent-color:#c9b89a;">
+              <span class="radio-label">慢节奏</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 结局偏好 -->
+        <div class="ending-selector" style="margin-top: 16px;">
+          <label class="input-label" style="margin-bottom: 8px;">结局偏好</label>
+          <div style="display:flex;gap:20px;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="ending" value="he" checked style="accent-color:#c9b89a;">
+              <span class="radio-label">HE</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="ending" value="be" style="accent-color:#c9b89a;">
+              <span class="radio-label">BE</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="radio" name="ending" value="open" style="accent-color:#c9b89a;">
+              <span class="radio-label">开放式</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="input-footer">
+          <button class="btn" id="startBtn" onclick="startFromManual()">开始互动</button>
+        </div>
+      </div>
+
+      <!-- 已有小说 Panel -->
+      <div id="panelNovel" class="novel-panel">
+        <!-- Step 1: 小说列表 -->
+        <div id="novelStep">
+          <div id="novelListContainer"></div>
+          <div id="novelEmpty" class="novel-empty" style="display:none;">
+            暂无已上传的小说，请先在 <a href="http://localhost:3000" target="_blank">RAG Agent</a> 上传
+          </div>
+        </div>
+
+        <!-- Step 2: 角色选择 -->
+        <div id="charStep" style="display:none;">
+          <div class="step-indicator">STEP 1/3 · 选择角色</div>
+          <div class="section-label">请选择主角（必选 1~2 个）</div>
+          <div id="protagonistList" class="char-list"></div>
+
+          <div class="section-label" style="margin-top:20px;">配角参考（来自原著，不可修改）</div>
+          <div id="supportingList" class="char-list"></div>
+
+          <div class="step-nav">
+            <button class="btn-back" onclick="backToNovelList()">← 返回选小说</button>
+            <button class="btn" id="nextToWorldBtn" onclick="goToWorldStep()">下一步：设定世界观</button>
+          </div>
+        </div>
+
+        <!-- Step 3: 世界观 + 新增角色 -->
+        <div id="worldStep" style="display:none;">
+          <div class="step-indicator">STEP 2/3 · 世界观改造</div>
+
+          <label class="section-label">原著世界观（供参考）</label>
+          <div id="originalWorldRef" class="reference-box"></div>
+
+          <div class="world-transform-wrap">
+            <label class="section-label">你的改造设定（必填）</label>
+            <textarea id="worldTransformInput"
+              placeholder="例如：保留逐玉和林澈的性格和背景，将理工编程竞赛背景改为现代都市职场，她成为产品经理，他成为后端工程师..."
+            ></textarea>
+          </div>
+
+          <label class="section-label" style="margin-top:20px;">新增角色（原著中没有）</label>
+          <div id="newCharList" class="new-char-list"></div>
+          <button class="btn-back" id="addNewCharBtn" onclick="addNewCharRow()" style="margin-bottom:16px;">+ 添加角色</button>
+
+          <div class="forbidden-wrap">
+            <label class="section-label" style="margin-top:8px;">禁止项（可选）</label>
+            <textarea id="forbiddenInput"
+              placeholder="保持1v1；不要出现其他女性角色；结局必须是HE..."
+            ></textarea>
+          </div>
+
+          <!-- 叙事节奏（小说模式也保留） -->
+          <div class="pace-selector" style="margin-top: 18px;">
+            <label class="input-label" style="margin-bottom: 8px;">叙事节奏</label>
+            <div style="display:flex;gap:20px;margin-top:4px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="radio" name="paceNovel" value="fast" style="accent-color:#c9b89a;">
+                <span class="radio-label">快节奏</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="radio" name="paceNovel" value="normal" checked style="accent-color:#c9b89a;">
+                <span class="radio-label">标准节奏</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="radio" name="paceNovel" value="slow" style="accent-color:#c9b89a;">
+                <span class="radio-label">慢节奏</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 结局偏好 -->
+          <div class="ending-selector" style="margin-top: 16px;">
+            <label class="input-label" style="margin-bottom: 8px;">结局偏好</label>
+            <div style="display:flex;gap:20px;margin-top:4px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="radio" name="endingNovel" value="he" checked style="accent-color:#c9b89a;">
+                <span class="radio-label">HE</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="radio" name="endingNovel" value="be" style="accent-color:#c9b89a;">
+                <span class="radio-label">BE</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="radio" name="endingNovel" value="open" style="accent-color:#c9b89a;">
+                <span class="radio-label">开放式</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="step-nav">
+            <button class="btn-back" onclick="backToCharStep()">← 返回选角色</button>
+            <button class="btn" id="startFromNovelBtn" onclick="startFromNovel()">开始互动</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 故事区域（初始隐藏） -->
+    <div id="storyArea" style="display:none">
+      <!-- 章节进度条 -->
+      <div class="chapter-progress" id="chapterProgress" style="display:none;">
+        <span class="chapter-label" id="chapterLabel">第 1 章</span>
+        <div class="chapter-bar">
+          <div class="chapter-dots" id="chapterDots"></div>
+        </div>
+      </div>
+      <div class="story-card" id="storyCard">
+        <div class="loading" id="loadingIndicator">
+          正在生成<span class="loading-dot"></span>
+        </div>
+        <div id="storyContent" style="display:none"></div>
+      </div>
+      <div class="story-footer">
+        <button class="btn-ghost" id="restartBtn">重新开始</button>
+      </div>
+      <div id="errorArea" style="display:none"></div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="prompts.js"></script>
+  <script>
+    // ─────────────────────────────────────────
+    // 状态
+    // ─────────────────────────────────────────
+    let storyBible      = null;   // Architect 生成的故事档案
+    let storyState    = null;   // 当前故事状态 { synopsis, openThreads, relationships, nextHook }
+    let history       = [];     // 玩家历史选择
+    let step            = 1;
+    let totalChapters   = 0;    // 总章数（由节奏档位决定）
+    let currentPace     = 'normal';
+    let currentEnding   = 'he';
+    let isGenerating    = false;  // 防重入
+
+    // 小说模式状态
+    let currentNovelId  = null;   // 当前选中小说 ID
+    let currentNovelTitle = null; // 当前选中小说名
+    let currentCharProfiles = []; // 当前小说角色 profile
+    let selectedProtagonists = [];// 选中的主角
+    let selectedSupportings = []; // 选中的配角
+
+    // ─────────────────────────────────────────
+    // DOM 引用
+    // ─────────────────────────────────────────
+    const inputCard    = document.getElementById('inputCard');
+    const storyArea    = document.getElementById('storyArea');
+    const inputText    = document.getElementById('inputText');
+    const storyCard    = document.getElementById('storyCard');
+    const loading      = document.getElementById('loadingIndicator');
+    const storyContent = document.getElementById('storyContent');
+    const errorArea    = document.getElementById('errorArea');
+    const chapterProgress = document.getElementById('chapterProgress');
+    const chapterLabel  = document.getElementById('chapterLabel');
+    const chapterDots   = document.getElementById('chapterDots');
+    const memoryToggle  = document.getElementById('memoryToggle');
+    const memoryPanel   = document.getElementById('memoryPanel');
+
+    document.getElementById('startBtn').addEventListener('click', startStory);
+    document.getElementById('restartBtn').addEventListener('click', restart);
+    memoryToggle.addEventListener('click', toggleMemoryPanel);
+
+    // ─────────────────────────────────────────
+    // Tab 切换
+    // ─────────────────────────────────────────
+    function switchTab(tab) {
+      document.getElementById('tabManual').classList.toggle('active', tab === 'manual');
+      document.getElementById('tabNovel').classList.toggle('active', tab === 'novel');
+      document.getElementById('panelManual').style.display = tab === 'manual' ? 'block' : 'none';
+      document.getElementById('panelNovel').classList.toggle('active', tab === 'novel');
+
+      if (tab === 'novel') {
+        loadNovelList();
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // Step 1: 加载小说列表
+    // ─────────────────────────────────────────
+    function loadNovelList() {
+      var container = document.getElementById('novelListContainer');
+      var empty = document.getElementById('novelEmpty');
+      container.innerHTML = '<div class="loading">加载中<span class="loading-dot"></span></div>';
+      empty.style.display = 'none';
+
+      fetch('/api/novels')
+        .then(function(res) { return res.json(); })
+        .then(function(novels) {
+          container.innerHTML = '';
+          if (!novels.length) {
+            empty.style.display = 'block';
+            return;
+          }
+          empty.style.display = 'none';
+          novels.forEach(function(n) {
+            var card = document.createElement('div');
+            card.className = 'novel-card' + (n.analyzing ? ' analyzing' : '');
+            card.innerHTML =
+              '<div class="novel-card-left">' +
+                '<div class="novel-title">' + escapeHtml(n.name) + '</div>' +
+                '<div class="novel-date">上传于 ' + formatDate(n.uploadedAt) + '</div>' +
+              '</div>' +
+              '<div>' +
+                (n.analyzing
+                  ? '<span class="novel-badge badge-analyzing">分析中</span>'
+                  : n.hasCharacterProfiles
+                    ? '<span class="novel-badge badge-ready">已就绪</span>'
+                    : '<span class="novel-badge badge-analyzing">待分析</span>') +
+              '</div>';
+            if (!n.analyzing) {
+              card.onclick = function() { selectNovel(n.id, n.name); };
+            }
+            container.appendChild(card);
+          });
+        })
+        .catch(function() {
+          container.innerHTML = '<div class="novel-empty">无法连接 RAG Agent，请确认 rag-agent 服务已启动</div>';
+        });
+    }
+
+    // ─────────────────────────────────────────
+    // Step 2: 选中小说，加载角色
+    // ─────────────────────────────────────────
+    function selectNovel(novelId, novelTitle) {
+      currentNovelId = novelId;
+      currentNovelTitle = novelTitle;
+      selectedProtagonists = [];
+
+      document.getElementById('novelStep').style.display = 'none';
+      document.getElementById('charStep').style.display = 'block';
+      document.getElementById('protagonistList').innerHTML = '<div class="loading">加载角色<span class="loading-dot"></span></div>';
+      document.getElementById('supportingList').innerHTML = '';
+
+      fetch('/api/novel-characters?novelId=' + encodeURIComponent(novelId))
+        .then(function(res) {
+          if (res.status === 202) return null; // analyzing
+          if (!res.ok) throw new Error('加载失败');
+          return res.json();
+        })
+        .then(function(data) {
+          if (!data) {
+            document.getElementById('protagonistList').innerHTML =
+              '<div class="analyzing-overlay">角色正在分析中，请稍候几秒后重试</div>';
+            return;
+          }
+          currentCharProfiles = data.characters || [];
+          // 配角默认全选：预填充 selectedSupportings
+          selectedSupportings = currentCharProfiles.map(function(p) { return p.name; });
+          renderCharSelector();
+        })
+        .catch(function() {
+          document.getElementById('protagonistList').innerHTML =
+            '<div class="error-msg">加载角色失败</div>';
+        });
+    }
+
+    function renderCharSelector() {
+      var protoList = document.getElementById('protagonistList');
+      var supportList = document.getElementById('supportingList');
+      protoList.innerHTML = '';
+      supportList.innerHTML = '';
+
+      currentCharProfiles.forEach(function(p) {
+        var card = document.createElement('div');
+        card.className = 'char-card';
+        card.dataset.name = p.name;
+        card.innerHTML =
+          '<div class="char-left">' +
+            '<div class="char-name">' + escapeHtml(p.name) + '</div>' +
+            '<div class="char-lock-badge">原著设定，不可修改</div>' +
+            '<div class="char-detail">' +
+              '<div><span class="char-detail-label">性格</span>' + escapeHtml(p.personality) + '</div>' +
+              '<div><span class="char-detail-label">说话</span>' + escapeHtml(p.speech) + '</div>' +
+              '<div><span class="char-detail-label">处事</span>' + escapeHtml(p.handlingStyle) + '</div>' +
+              '<div><span class="char-detail-label">背景</span>' + escapeHtml(p.backstory) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="char-right">' +
+            '<div class="char-check-row">' +
+              '<input type="checkbox" class="protagonist-check" id="proto_' + escapeAttr(p.name) + '" onchange="onProtagonistToggle(this, \'' + escapeAttr(p.name) + '\')">' +
+              '<label for="proto_' + escapeAttr(p.name) + '">设为主角</label>' +
+            '</div>' +
+            '<div class="char-check-row">' +
+              '<input type="checkbox" class="supporting-check" checked onchange="onSupportingToggle(this, \'' + escapeAttr(p.name) + '\')">' +
+              '<label>保留为配角</label>' +
+            '</div>' +
+          '</div>';
+        protoList.appendChild(card);
+      });
+    }
+
+    function onProtagonistToggle(checkbox, name) {
+      if (checkbox.checked) {
+        if (!selectedProtagonists.includes(name)) {
+          if (selectedProtagonists.length >= 2) {
+            checkbox.checked = false;
+            return;
+          }
+          selectedProtagonists.push(name);
+        }
+      } else {
+        selectedProtagonists = selectedProtagonists.filter(function(n) { return n !== name; });
+      }
+      // 更新卡片高亮
+      var card = checkbox.closest('.char-card');
+      card.classList.toggle('selected-as-hero', checkbox.checked);
+      // 更新 next 按钮状态
+      updateNextBtn();
+    }
+
+    function onSupportingToggle(checkbox, name) {
+      if (checkbox.checked) {
+        if (!selectedSupportings.includes(name)) selectedSupportings.push(name);
+      } else {
+        selectedSupportings = selectedSupportings.filter(function(n) { return n !== name; });
+      }
+    }
+
+    function updateNextBtn() {
+      var btn = document.getElementById('nextToWorldBtn');
+      btn.disabled = selectedProtagonists.length === 0;
+      btn.textContent = selectedProtagonists.length === 0
+        ? '请先选择主角'
+        : '下一步：设定世界观';
+    }
+
+    // ─────────────────────────────────────────
+    // Step 3: 世界观改造表单
+    // ─────────────────────────────────────────
+    function goToWorldStep() {
+      if (selectedProtagonists.length === 0) return;
+
+      // 找出被取消勾选的配角，从选中列表移除
+      var allNames = currentCharProfiles.map(function(p) { return p.name; });
+      var cancelled = allNames.filter(function(n) {
+        var card = document.querySelector('.char-card[data-name="' + n + '"]');
+        return card && !card.querySelector('.supporting-check').checked;
+      });
+      selectedSupportings = selectedSupportings.filter(function(n) { return !cancelled.includes(n); });
+
+      // 默认世界观的参考文本
+      var protoNames = selectedProtagonists.join('、');
+      document.getElementById('originalWorldRef').innerHTML =
+        '主角：' + protoNames + '，背景：' +
+        escapeHtml(currentCharProfiles.find(function(p) { return p.name === protoNames.split('、')[0]; })?.backstory || '（见上方角色卡片）');
+
+      document.getElementById('charStep').style.display = 'none';
+      document.getElementById('worldStep').style.display = 'block';
+
+      // 默认选中 pace/ending
+      document.querySelector('input[name="paceNovel"][value="normal"]').checked = true;
+      document.querySelector('input[name="endingNovel"][value="he"]').checked = true;
+
+      // 初始添加一行新增角色
+      addNewCharRow();
+    }
+
+    function addNewCharRow() {
+      var list = document.getElementById('newCharList');
+      var row = document.createElement('div');
+      row.className = 'new-char-row';
+      row.innerHTML =
+        '<input placeholder="姓名" class="new-char-name">' +
+        '<input placeholder="性格/设定" class="new-char-desc">';
+      list.appendChild(row);
+    }
+
+    // ─────────────────────────────────────────
+    // 导航
+    // ─────────────────────────────────────────
+    function backToNovelList() {
+      document.getElementById('charStep').style.display = 'none';
+      document.getElementById('worldStep').style.display = 'none';
+      document.getElementById('novelStep').style.display = 'block';
+    }
+
+    function backToCharStep() {
+      document.getElementById('worldStep').style.display = 'none';
+      document.getElementById('charStep').style.display = 'block';
+    }
+
+    // ─────────────────────────────────────────
+    // 构建输入文本并启动故事
+    // ─────────────────────────────────────────
+    function buildInputFromNovel() {
+      var worldTransform = document.getElementById('worldTransformInput').value.trim();
+      var forbidden = document.getElementById('forbiddenInput').value.trim();
+
+      // 主角
+      var protos = selectedProtagonists.map(function(name) {
+        var p = currentCharProfiles.find(function(c) { return c.name === name; });
+        if (!p) return name;
+        return p.name + '：' + p.personality + '；说话癖好=' + p.speech + '；处事风格=' + p.handlingStyle + '；背景=' + p.backstory;
+      });
+
+      // 配角
+      var supports = selectedSupportings.map(function(name) {
+        var p = currentCharProfiles.find(function(c) { return c.name === name; });
+        if (!p) return name;
+        return p.name + '：' + p.personality + '；说话癖好=' + p.speech + '；处事风格=' + p.handlingStyle + '；背景=' + p.backstory;
+      });
+
+      // 新增角色
+      var newCharRows = document.querySelectorAll('#newCharList .new-char-row');
+      var newChars = [];
+      newCharRows.forEach(function(row) {
+        var nameEl = row.querySelector('.new-char-name');
+        var descEl = row.querySelector('.new-char-desc');
+        if (nameEl && nameEl.value.trim()) {
+          newChars.push({ name: nameEl.value.trim(), desc: descEl.value.trim() });
+        }
+      });
+
+      var lines = [];
+      lines.push('【世界观】' + (worldTransform || '沿用原著设定'));
+
+      lines.push('【主角】' + protos.join('\n'));
+
+      if (supports.length) {
+        lines.push('【核心角色】' + supports.join('\n'));
+      }
+
+      if (newChars.length) {
+        lines.push('【新增角色】' + newChars.map(function(c) { return c.name + '：' + c.desc; }).join('\n'));
+      }
+
+      if (forbidden) {
+        lines.push('【禁止】' + forbidden);
+      }
+
+      // 存储 charProfiles 供 prompt 使用
+      window._charProfilesFromNovel = currentCharProfiles.filter(function(p) {
+        return selectedProtagonists.includes(p.name) || selectedSupportings.includes(p.name);
+      });
+
+      return lines.join('\n');
+    }
+
+    function startFromNovel() {
+      var worldTransform = document.getElementById('worldTransformInput').value.trim();
+      if (!worldTransform) {
+        alert('请填写世界观改造设定');
+        return;
+      }
+      var input = buildInputFromNovel();
+      var pace = (document.querySelector('input[name="paceNovel"]:checked') || {}).value || 'normal';
+      var ending = (document.querySelector('input[name="endingNovel"]:checked') || {}).value || 'he';
+
+      // 用小说模式的 pace/ending 覆盖全局状态
+      currentPace = pace;
+      currentEnding = ending;
+
+      document.getElementById('worldStep').style.display = 'none';
+      inputCard.style.display = 'none';
+      storyArea.style.display = 'block';
+      errorArea.style.display = 'none';
+      storyContent.innerHTML = '';
+      chapterProgress.style.display = 'flex';
+      updateChapterProgress();
+      renderMemoryCard();
+
+      totalChapters = getTotalChapters(currentPace, currentEnding);
+      history = [];
+      step = 1;
+      storyBible = null;
+      storyState = null;
+
+      showLoading('正在构建故事档案');
+      runStoryPipeline(input);
+    }
+
+    function startFromManual() {
+      var input = document.getElementById('inputText').value.trim();
+      if (!input) {
+        alert('请先输入角色设定或粘贴小说片段');
+        return;
+      }
+      currentPace = (document.querySelector('input[name="pace"]:checked') || {}).value || 'normal';
+      currentEnding = (document.querySelector('input[name="ending"]:checked') || {}).value || 'he';
+      totalChapters = getTotalChapters(currentPace, currentEnding);
+      history = [];
+      step = 1;
+      storyBible = null;
+      storyState = null;
+
+      inputCard.style.display = 'none';
+      storyArea.style.display = 'block';
+      errorArea.style.display = 'none';
+      storyContent.innerHTML = '';
+      chapterProgress.style.display = 'flex';
+      updateChapterProgress();
+      renderMemoryCard();
+
+      showLoading('正在构建故事档案');
+      runStoryPipeline(input);
+    }
+
+    // ─────────────────────────────────────────
+    // 工具函数
+    // ─────────────────────────────────────────
+    function formatDate(ts) {
+      if (!ts) return '';
+      var d = new Date(ts);
+      return d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+    }
+
+    function toggleMemoryPanel() {
+      var isOpen = memoryPanel.classList.toggle('open');
+      memoryToggle.classList.toggle('active', isOpen);
+      memoryToggle.textContent = isOpen ? '✕' : '≡';
+    }
+
+    // ─────────────────────────────────────────
+    // 事件委托：选项按钮 / 方向按钮点击
+    // ─────────────────────────────────────────
+    document.addEventListener('click', function(e) {
+      if (isGenerating) return;
+
+      var btn = e.target.closest('.choice-btn');
+      if (btn) {
+        var index      = Number(btn.dataset.index);
+        var choiceText = btn.dataset.choice;
+        var pace       = btn.dataset.pace || currentPace;
+        var ending     = btn.dataset.ending || currentEnding;
+        makeChoice(index, choiceText, pace, ending);
+      }
+    });
+
+    // ─────────────────────────────────────────
+    // 入口
+    // ─────────────────────────────────────────
+    function startStory() {
+      if (isGenerating) return;
+      var input = inputText.value.trim();
+      if (!input) {
+        alert('请先输入角色设定或粘贴小说片段');
+        return;
+      }
+
+      currentPace   = (document.querySelector('input[name="pace"]:checked')   || {}).value || 'normal';
+      currentEnding = (document.querySelector('input[name="ending"]:checked') || {}).value || 'he';
+      totalChapters = getTotalChapters(currentPace, currentEnding);
+      history       = [];
+      step          = 1;
+      storyBible    = null;
+      storyState    = null;
+
+      inputCard.style.display    = 'none';
+      storyArea.style.display    = 'block';
+      errorArea.style.display    = 'none';
+      storyContent.innerHTML     = '';
+      chapterProgress.style.display = 'flex';
+      updateChapterProgress();
+      renderMemoryCard();
+
+      showLoading('正在构建故事档案');
+
+      runStoryPipeline(input);
+    }
+
+    // ─────────────────────────────────────────
+    // 轻量流水线：Architect → Writer（必要时单次润色兜底）
+    // ─────────────────────────────────────────
+    async function runStoryPipeline(input) {
+      try {
+        // Step 1: Architect 生成 story bible
+        showLoading('正在构建故事档案');
+        var parsed = parseUserInput(input);
+        var charProfiles = window._charProfilesFromNovel || null;
+        storyBible = await callLLM(
+          buildArchitectPrompt(parsed, charProfiles),
+          'architect',
+          0
+        );
+        if (charProfiles) {
+          storyBible.charProfiles = charProfiles;
+        }
+        validateBible(storyBible);
+        downloadStoryBible(storyBible);
+
+        // Step 2: Writer 生成第一章正文
+        showLoading('正在生成故事正文');
+        var draft = await generateStoryNode(storyBible, history, step, currentPace, currentEnding);
+
+        // Step 3: 渲染正文（兼容新旧 schema：新版顶层字段 / 旧版 storyStatePatch）
+        var topPatch = {
+          synopsis:     draft.synopsis     || (draft.storyStatePatch || {}).synopsis     || '',
+          nextHook:     draft.nextHook     || (draft.storyStatePatch || {}).nextHook     || '',
+          openThreads:  draft.openThreads  || (draft.storyStatePatch || {}).openThreads  || []
+        };
+        if (!topPatch.synopsis && draft.narrative) {
+          topPatch.synopsis = autoExtractSynopsis(draft.narrative);
+        }
+        storyState = mergeStoryState(storyState, topPatch);
+        renderNode(draft, currentPace, currentEnding);
+        // #region agent log
+        fetch('/api/debug-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({step,ending:draft.ending,narrLen:draft.narrative&&draft.narrative.length||0,storyState:{synopsis:(storyState.synopsis||'').slice(0,80),openThreads:(storyState.openThreads||[]).length,nextHook:storyState.nextHook||''},attempt:'rendered'})}).catch(function(){});
+        // #endregion
+
+      } catch (err) {
+        hideLoading();
+        errorArea.style.display = 'block';
+        errorArea.innerHTML = '<div class="error-msg">生成失败：' + err.message + '</div>';
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // 快速生成：默认单次 Writer，必要时单次润色兜底
+    // ─────────────────────────────────────────
+    async function generateStoryNode(bible, history, step, pace, ending, forceNextHook, synopsis) {
+      var nextHook = forceNextHook || ((storyState && storyState.nextHook) || '');
+      synopsis = synopsis || ((storyState && storyState.synopsis) || '');
+      // #region agent log
+      fetch('/api/debug-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({step,historyLen:history&&history.length||0,nextHook,synopsis:synopsis.slice(0,80),pace,ending,attempt:'first'})}).catch(function(){});
+      // #endregion
+      var draft = await callLLM(
+        buildWriterPrompt(bible, history, step, pace, ending, nextHook, synopsis),
+        'writer',
+        step
+      );
+      validateDraft(draft);
+      return draft;
+    }
+
+    async function writerWithReview(bible, history, step, pace, ending, forceNextHook, synopsis) {
+      try {
+        return await generateStoryNode(bible, history, step, pace, ending, forceNextHook, synopsis);
+      } catch (err) {
+        var nextHook = forceNextHook || ((storyState && storyState.nextHook) || '');
+        synopsis = synopsis || ((storyState && storyState.synopsis) || '');
+        showLoading('正在修正生成结果');
+        var fallbackDraft = await callLLM(
+          buildWriterPrompt(bible, history, step, pace, ending, nextHook, synopsis) +
+          '\n\n【补充要求】\n- 必须严格输出合法 JSON\n- scene 必填\n- narrative 必填\n- choices 必须是长度为3的数组；若 ending=true，则 choices 允许为空数组\n- ending 必须是布尔值\n- endingText 必须是字符串',
+          'writer',
+          step
+        );
+        validateDraft(fallbackDraft);
+        return fallbackDraft;
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // 用户点击选项
+    // ─────────────────────────────────────────
+    function makeChoice(index, choiceText, pace, ending) {
+      if (isGenerating) return;
+      isGenerating = true;
+      // 预存 choice，生成后再补 narrative
+      history.push({ choice: choiceText, narrative: '' });
+      step++;
+
+      disableChoices();
+      showLoading('正在生成下一章');
+
+      writerWithReview(storyBible, history, step, pace, ending)
+        .then(function(draft) {
+          // 补全 history 中本章的 narrative 摘要
+          if (history.length > 0) {
+            history[history.length - 1].narrative = (draft.narrative || '').slice(0, 200);
+          }
+          // 自动兜底：若 LLM 未生成 synopsis，从 narrative 提取（兼容新旧 schema）
+          var topPatch = {
+            synopsis:     draft.synopsis     || (draft.storyStatePatch || {}).synopsis     || '',
+            nextHook:     draft.nextHook     || (draft.storyStatePatch || {}).nextHook     || '',
+            openThreads:  draft.openThreads  || (draft.storyStatePatch || {}).openThreads  || []
+          };
+          if (!topPatch.synopsis && draft.narrative) {
+            topPatch.synopsis = autoExtractSynopsis(draft.narrative);
+          }
+          storyState = mergeStoryState(storyState, topPatch);
+          renderNode(draft, pace, ending);
+          // #region agent log
+          fetch('/api/debug-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({step,ending:draft.ending,narrLen:draft.narrative&&draft.narrative.length||0,storyState:{synopsis:(storyState.synopsis||'').slice(0,80),openThreads:(storyState.openThreads||[]).length,nextHook:storyState.nextHook||''},attempt:'rendered'})}).catch(function(){});
+          // #endregion
+          isGenerating = false;
+        })
+        .catch(function(err) {
+          isGenerating = false;
+          hideLoading();
+          errorArea.style.display = 'block';
+          errorArea.innerHTML = '<div class="error-msg">生成失败：' + err.message + '</div>';
+          reenableChoices();
+        });
+    }
+
+    // ─────────────────────────────────────────
+    // LLM 调用（统一入口，自动拼接 system/user）
+    // ─────────────────────────────────────────
+    async function callLLM(userContent, agentType, step) {
+      var systemContent;
+      if (agentType === 'architect' || agentType === 'writer' || agentType === 'reviewer' ||
+          agentType === 'reviewer2' || agentType === 'polish' || agentType === 'polish2' ||
+          agentType === 'seeds') {
+        systemContent = getSystemPrompt(agentType);
+      } else {
+        systemContent = SYSTEM_PROMPT;
+      }
+
+      var messages = [
+        { role: 'system', content: systemContent },
+        { role: 'user',   content: userContent }
+      ];
+
+      var maxTokens = CONFIG.MAX_TOKENS;
+      if (agentType === 'architect') {
+        maxTokens = 800;
+      } else if (agentType === 'writer') {
+        maxTokens = 1000;
+      } else if (agentType === 'reviewer' || agentType === 'reviewer2') {
+        maxTokens = 400;
+      } else if (agentType === 'polish' || agentType === 'polish2') {
+        maxTokens = 700;
+      } else if (agentType === 'seeds') {
+        maxTokens = 300;
+      }
+
+      var body = JSON.stringify({
+        model:              CONFIG.MODEL,
+        messages:           messages,
+        temperature:        agentType === 'architect' ? 0.7 : CONFIG.TEMPERATURE,
+        max_completion_tokens: maxTokens
+      });
+
+      var res = await fetch(CONFIG.BASE_URL + '/chat/completions', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + CONFIG.API_KEY
+        },
+        body: body
+      });
+
+      if (!res.ok) {
+        var err = await res.text().catch(function() { return '(无法读取响应体)'; });
+        throw new Error('请求失败 (' + res.status + ')\n' + err.slice(0, 300));
+      }
+
+      var data = await res.json();
+      var text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+      if (!text) throw new Error('API 返回了空内容');
+
+      // 去掉 markdown JSON 包裹
+      text = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+      return JSON.parse(text);
+    }
+
+    function getSystemPrompt(agentType) {
+      switch (agentType) {
+        case 'architect':  return ARCHITECT_SYSTEM;
+        case 'writer':     return WRITER_SYSTEM;
+        case 'reviewer':
+        case 'reviewer2':  return REVIEWER_SYSTEM;
+        case 'polish':
+        case 'polish2':    return POLISH_SYSTEM;
+        case 'seeds':      return SEEDS_SYSTEM;
+        default:           return WRITER_SYSTEM;
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // 校验
+    // ─────────────────────────────────────────
+    function validateBible(bible) {
+      var required = ['title', 'genre', 'logline', 'protagonist', 'heroine', 'mainConflict'];
+      for (var i = 0; i < required.length; i++) {
+        if (!bible[required[i]]) {
+          throw new Error('故事档案缺少必要字段：' + required[i]);
+        }
+      }
+      if (!Array.isArray(bible.openThreads)) bible.openThreads = [];
+      if (!Array.isArray(bible.highlights))  bible.highlights  = [];
+      if (!Array.isArray(bible.forbidden))   bible.forbidden   = [];
+      if (!bible.endingHint) bible.endingHint = '';
+    }
+
+    function validateDraft(draft) {
+      if (!draft.scene && !draft.narrative) {
+        throw new Error('生成内容格式异常，请重试');
+      }
+      if (!Array.isArray(draft.choices)) draft.choices = [];
+    }
+
+    // ─────────────────────────────────────────
+    // storyState 合并
+    // ─────────────────────────────────────────
+    // 从 narrative 文本自动提取一句话摘要（兜底用）
+    function autoExtractSynopsis(narrative) {
+      if (!narrative) return '';
+      // 取前三句的核心主语+谓语
+      var sentences = narrative.replace(/[。？！]/g, '.').split('.').filter(function(s) { return s.trim().length > 0; });
+      var first = (sentences[0] || '').trim();
+      var second = (sentences[1] || '').trim();
+      if (first.length <= 20) return first;
+      // 截取到 20 字
+      return first.slice(0, 20) + (second ? '…' + second.slice(0, 10) : '…');
+    }
+
+    function mergeStoryState(prev, patch) {
+      if (!prev) {
+        return {
+          synopsis:      patch && patch.synopsis      || '',
+          openThreads:   patch && patch.openThreads   || (storyBible ? storyBible.openThreads : []) || [],
+          relationships: patch && patch.relationships || [],
+          nextHook:      patch && patch.nextHook      || ''
+        };
+      }
+      var mergedThreads = (prev.openThreads || []).concat(patch && patch.openThreads || []);
+      // 去重（按字符串内容）
+      var seen = {};
+      var deduped = [];
+      for (var i = 0; i < mergedThreads.length; i++) {
+        var t = mergedThreads[i];
+        if (!seen[t]) { seen[t] = true; deduped.push(t); }
+      }
+      return {
+        synopsis:      (patch && patch.synopsis)      || prev.synopsis      || '',
+        openThreads:   deduped,
+        relationships: (patch && patch.relationships) || prev.relationships || [],
+        nextHook:      (patch && patch.nextHook)      || prev.nextHook      || ''
+      };
+    }
+
+    // ─────────────────────────────────────────
+    // 渲染
+    // ─────────────────────────────────────────
+    function renderNode(node, pace, ending) {
+      hideLoading();
+      var html = '';
+
+      if (node.ending) {
+        storyCard.className = 'story-card ending';
+        html =
+          '<div class="scene-title">— 结局 —</div>' +
+          '<div class="narrative">' + escapeHtml(node.narrative || '') + '</div>' +
+          '<div class="ending-divider"></div>' +
+          '<div class="ending-text">' + escapeHtml(node.endingText || '') + '</div>' +
+          '<div class="restart-wrap"><button class="btn-restart" id="inlineRestartBtn">重新开始</button></div>';
+        storyContent.innerHTML = html;
+        document.getElementById('inlineRestartBtn').addEventListener('click', restart);
+        chapterProgress.style.display = 'none';
+        renderMemoryCard();
+
+      } else {
+        storyCard.className = 'story-card';
+        var choicesHtml = '';
+        for (var i = 0; i < node.choices.length; i++) {
+          var c = node.choices[i];
+          choicesHtml += '<button class="choice-btn" ' +
+            'data-index="' + i + '" ' +
+            'data-choice="' + escapeAttr(c) + '" ' +
+            'data-pace="' + escapeAttr(pace) + '" ' +
+            'data-ending="' + escapeAttr(ending) + '">' +
+            escapeHtml(c) + '</button>';
+        }
+        html =
+          '<div class="scene-title">' + escapeHtml(node.scene || '') + '</div>' +
+          '<div class="narrative">' + escapeHtml(node.narrative || '') + '</div>' +
+          '<div class="choices">' + choicesHtml + '</div>';
+        storyContent.innerHTML = html;
+        updateChapterProgress();
+        renderMemoryCard();
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // 加载状态
+    // ─────────────────────────────────────────
+    function showLoading(msg) {
+      storyCard.className = 'story-card';
+      loading.style.display      = 'block';
+      loading.innerHTML          = (msg || '正在生成') + '<span class="loading-dot"></span>';
+      storyContent.style.display = 'none';
+      errorArea.style.display    = 'none';
+    }
+
+    function hideLoading() {
+      loading.style.display = 'none';
+      storyContent.style.display = 'block';
+    }
+
+    // ─────────────────────────────────────────
+    // 按钮状态
+    // ─────────────────────────────────────────
+    function disableChoices() {
+      var btns = document.querySelectorAll('.choice-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].disabled = true;
+        btns[i].style.opacity = '0.4';
+      }
+    }
+
+    function reenableChoices() {
+      var btns = document.querySelectorAll('.choice-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].disabled = false;
+        btns[i].style.opacity = '1';
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // 章节进度条
+    // ─────────────────────────────────────────
+    function getTotalChapters(pace, ending) {
+      var paceMap = { fast: 3, normal: 8, slow: 15 };
+      return paceMap[pace] || 8;
+    }
+
+    function updateChapterProgress() {
+      var total = totalChapters;
+      var current = step;
+      chapterLabel.textContent = '第 ' + current + ' 章 / 共 ' + total + ' 章';
+
+      // 最多显示 12 个点，超出则简化
+      var displayCount = Math.min(total, 12);
+      var html = '';
+      for (var i = 1; i <= displayCount; i++) {
+        var cls = 'chapter-dot';
+        if (i < current) cls += ' done';
+        else if (i === current) cls += ' current';
+        html += '<div class="' + cls + '"></div>';
+      }
+      if (total > 12) {
+        html += '<span style="font-size:10px;color:#4a453d;">+' + (total - 12) + '</span>';
+      }
+      chapterDots.innerHTML = html;
+    }
+
+    // ─────────────────────────────────────────
+    // 记忆卡渲染
+    // ─────────────────────────────────────────
+    function renderMemoryCard() {
+      var bibleSection = document.getElementById('memoryBibleSection');
+      var threadsSection = document.getElementById('memoryThreadsSection');
+      var choicesSection = document.getElementById('memoryChoicesSection');
+
+      // 故事档案
+      if (storyBible) {
+        bibleSection.innerHTML =
+          '<div class="memory-section">' +
+            '<div class="memory-section-label">档案</div>' +
+            '<div class="memory-bible-title">' + escapeHtml(storyBible.title || '') + '</div>' +
+            '<div class="memory-bible-genre">' + escapeHtml(storyBible.genre || '') + '</div>' +
+            '<div class="memory-bible-logline">' + escapeHtml(storyBible.logline || '') + '</div>' +
+          '</div>';
+      } else {
+        bibleSection.innerHTML = '';
+      }
+
+      // 悬念线
+      var threads = (storyState && storyState.openThreads) || [];
+      if (threads.length > 0) {
+        threadsSection.innerHTML =
+          '<div class="memory-section">' +
+            '<div class="memory-section-label">悬念</div>' +
+            threads.map(function(t) {
+              return '<div class="memory-thread">' + escapeHtml(t) + '</div>';
+            }).join('') +
+          '</div>';
+      } else {
+        threadsSection.innerHTML = '';
+      }
+
+      // 历史选择
+      if (history.length > 0) {
+        var choicesHtml = history.map(function(c, i) {
+          return '<div class="memory-choice"><span class="memory-choice-num">第' + (i + 1) + '章</span>' + escapeHtml(c) + '</div>';
+        }).join('');
+        choicesSection.innerHTML =
+          '<div class="memory-section">' +
+            '<div class="memory-section-label">你的选择</div>' +
+            choicesHtml +
+          '</div>';
+      } else {
+        choicesSection.innerHTML = '';
+      }
+    }
+
+    // ─────────────────────────────────────────
+    // 重新开始
+    // ─────────────────────────────────────────
+    function restart() {
+      history      = [];
+      step         = 1;
+      totalChapters = 0;
+      storyBible   = null;
+      storyState   = null;
+      isGenerating = false;
+      storyArea.style.display    = 'none';
+      inputCard.style.display    = 'block';
+      inputText.value           = '';
+      storyContent.innerHTML     = '';
+      errorArea.style.display   = 'none';
+      errorArea.innerHTML        = '';
+      chapterProgress.style.display = 'none';
+      memoryPanel.classList.remove('open');
+      memoryToggle.classList.remove('active');
+      memoryToggle.textContent   = '≡';
+      // 重置小说模式状态
+      currentNovelId  = null;
+      currentNovelTitle = null;
+      currentCharProfiles = [];
+      selectedProtagonists = [];
+      selectedSupportings = [];
+      window._charProfilesFromNovel = null;
+      // 回到手动输入 Tab
+      switchTab('manual');
+      inputText.focus();
+    }
+
+    // ─────────────────────────────────────────
+    // 工具
+    // ─────────────────────────────────────────
+    function downloadStoryBible(bible) {
+      fetch('/api/save-bible', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bible)
+      }).then(function(res) {
+        if (res.ok) {
+          res.json().then(function(data) {
+            console.log('Story Bible 已保存至 story_bible/' + data.filename);
+          });
+        }
+      }).catch(function() {
+        // 保存失败静默跳过，不影响主流程
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/\n/g, '&#10;')
+        .replace(/\r/g, '&#13;');
+    }
+  </script>
+</body>
+</html>

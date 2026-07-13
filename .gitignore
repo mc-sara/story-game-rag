@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Generated data / local runtime state
+index.json
+data/conversations.json
+uploads/
+chapters/*_profiles.json
+Story-game/story_bible/*.json
+
+# OS/editor files
+.DS_Store
+*.log
+

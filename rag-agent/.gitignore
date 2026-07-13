@@ -1,0 +1,28 @@
+# 环境变量（包含 API Key）
+.env
+
+# 文档索引（包含所有文档全文）
+index.json
+
+# 对话历史
+data/
+
+# 上传文件（原始文件 + 编码转换后的文件）
+uploads/
+
+# 临时文件
+*.log
+*.tmp
+*.temp
+
+# 依赖
+node_modules/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

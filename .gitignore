@@ -12,8 +12,8 @@ data/conversations.json
 uploads/
 chapters/*_profiles.json
 Story-game/story_bible/*.json
+Story-game/story_runs/*.json
 
 # OS/editor files
 .DS_Store
 *.log
-

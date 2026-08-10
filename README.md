@@ -1,9 +1,40 @@
 # Story Game RAG
 
+English | [中文](README.zh-CN.md)
+
+Story Game RAG is an interactive fan-fiction story game powered by novel ingestion, character profile extraction, and retrieval-augmented story context. Users can upload or select a source novel, choose original characters, transform the setting, and play through branching story chapters.
+
+## Screenshots
+
+### Novel Library
+
+![Novel library and source novel selection](docs/screenshots/novel-library.png)
+
+### Interactive Story Chapter
+
+![Interactive story chapter with branching choices](docs/screenshots/story-chapter.png)
+
+### Manual Story Setup
+
+![Manual character and background setup](docs/screenshots/manual-setup.png)
+
+## Highlights
+
+- Upload or select a source novel from one Story-game page.
+- Extract reusable character profiles, relationships, chapter summaries, and relevant scenes.
+- Generate a story bible before writing to keep the story direction coherent.
+- Inject original-novel context into each story node for stronger character consistency.
+- Continue gracefully when RAG context is unavailable, so the story UI does not break.
+- Save generated story bibles and test story runs locally for debugging.
+
+## Architecture
+
 This repository contains two cooperating local apps:
 
 - `rag-agent/`: novel ingestion, indexing, character profile extraction, chapter summaries, and RAG retrieval.
-- `Story-game/`: interactive fan-fiction story UI, story bible generation, and prompt orchestration.
+- `Story-game/`: interactive fan-fiction story UI, story bible generation, prompt orchestration, and upload proxy.
+
+Users open `Story-game` in the browser. `rag-agent` still runs as the internal analysis service.
 
 ## Local Setup
 
@@ -34,12 +65,6 @@ TIMEOUT=60000
 INDEX_FILE=./index.json
 ```
 
-Required fields:
-
-- `API_KEY`: your LLM provider API key.
-- `BASE_URL`: OpenAI-compatible API base URL, ending with `/v1`.
-- `MODEL`: chat model used for chapter summaries, character extraction, and RAG answers.
-
 ### Story-game
 
 ```bash
@@ -63,13 +88,6 @@ PORT=3002
 RAG_AGENT_URL=http://localhost:3000
 ```
 
-Required fields:
-
-- `API_KEY`: your LLM provider API key for local Story-game generation.
-- `BASE_URL`: OpenAI-compatible API base URL, ending with `/v1`.
-- `MODEL`: chat model used by the interactive story generator.
-- `RAG_AGENT_URL`: internal URL of the local `rag-agent` service.
-
 Important: the current `Story-game` frontend also loads `Story-game/config.js` in the browser. For local testing, keep it as a placeholder or replace it only with a temporary test key. Do not put production API keys in browser code.
 
 ## Run Order
@@ -90,8 +108,16 @@ npm start
 
 Open `http://localhost:3002` for the story UI. The RAG service should remain running at `http://localhost:3000`.
 
+## Generated Files
+
+- `Story-game/story_bible/`: generated story bible JSON files.
+- `Story-game/story_runs/`: generated story run JSON files for testing and review.
+- `rag-agent/uploads/`: uploaded source documents and cleaned text versions.
+- `rag-agent/chapters/`: extracted character profile files.
+- `rag-agent/index.json`: generated local index.
+
 ## Notes
 
 - Do not commit `.env`, uploaded novels, generated indexes, generated story bibles, or generated story runs.
 - `rag-agent/.env.example` and `Story-game/.env.example` are templates. Copy them to `.env` and replace placeholders locally.
-- `Story-game/config.js` is a browser placeholder. Do not put production API keys in browser code; for production, proxy LLM calls through the server.
+- For production, proxy LLM calls through the server instead of exposing API keys in browser code.

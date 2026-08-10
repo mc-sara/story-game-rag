@@ -1,44 +1,91 @@
-# Story Game RAG
+# Source-Fiction Interactive Generator
 
 English | [中文](README.zh-CN.md)
 
-Story Game RAG is an interactive fan-fiction story game powered by novel ingestion, character profile extraction, and retrieval-augmented story context. Users can upload or select a source novel, choose original characters, transform the setting, and play through branching story chapters.
+Upload a source novel, choose original characters, transform the world setting, and generate an interactive fan-fiction story with branching choices.
 
-## Screenshots
+This project is not a generic chatbot for writing fiction. It is a small RAG-based story game pipeline designed for one specific workflow: turning a source novel into a playable, choice-driven fan-fiction experience while preserving character voice, relationships, and story context.
 
-### Novel Library
+## Demo
+
+### Select a Source Novel
 
 ![Novel library and source novel selection](docs/screenshots/novel-library.png)
 
-### Interactive Story Chapter
+### Play Through Branching Chapters
 
 ![Interactive story chapter with branching choices](docs/screenshots/story-chapter.png)
 
-### Manual Story Setup
+### Create from Manual Character Setup
 
 ![Manual character and background setup](docs/screenshots/manual-setup.png)
 
-## Highlights
+## What It Does
 
-- Upload or select a source novel from one Story-game page.
-- Extract reusable character profiles, relationships, chapter summaries, and relevant scenes.
-- Generate a story bible before writing to keep the story direction coherent.
-- Inject original-novel context into each story node for stronger character consistency.
-- Continue gracefully when RAG context is unavailable, so the story UI does not break.
-- Save generated story bibles and test story runs locally for debugging.
+| Capability | How it works |
+| --- | --- |
+| Source novel ingestion | Uploads novels, normalizes text encoding, splits chapters, and builds a local index. |
+| Character consistency | Extracts character profiles, speech style, behavior patterns, backstory, and relationships. |
+| Long-context handling | Avoids stuffing the full novel into prompts; retrieves chapter summaries and relevant scenes for each story node. |
+| Story planning | Uses an Architect prompt to create a Story Bible before generating chapters. |
+| Branching narrative | Uses a Writer prompt to generate scene text, chapter state, and three player choices. |
+| Consistency review | Uses Reviewer constraints to check voice, relationship logic, backstory, and OOC risk. |
+| Debugging output | Saves generated Story Bibles and story runs locally for review. |
+
+## Workflow
+
+```mermaid
+flowchart LR
+  A[Upload / Select Novel] --> B[Chapter Splitting]
+  B --> C[Character Profiles]
+  B --> D[Chapter Summaries]
+  C --> E[Choose Characters]
+  D --> F[Retrieve Relevant Context]
+  E --> G[World Transformation]
+  F --> H[Architect: Story Bible]
+  G --> H
+  H --> I[Writer: Story Node]
+  I --> J[Player Choice]
+  J --> F
+  J --> I
+```
+
+## RAG Design
+
+The project treats a long novel as structured context instead of raw prompt text.
+
+1. **Chapter layer**: the source novel is split into chapters and indexed.
+2. **Character layer**: character profiles capture personality, speech, handling style, backstory, relationships, and key events.
+3. **Summary layer**: chapter summaries provide lightweight global context.
+4. **Scene layer**: relevant original scenes are retrieved based on the current story node and player choice.
+5. **Generation layer**: retrieved context is injected into the prompt only when it is useful for the current chapter.
+
+This keeps prompts smaller and more targeted while preserving original-novel constraints.
+
+## Prompt Design
+
+The generation pipeline is split into specialized roles:
+
+| Role | Responsibility |
+| --- | --- |
+| Architect | Builds the Story Bible: genre, logline, protagonists, main conflict, forbidden items, open threads, and ending direction. |
+| Writer | Generates the current chapter scene, narrative text, story-state patch, and player choices. |
+| Reviewer | Adds consistency checks for character voice, relationship logic, backstory continuity, and tone alignment. |
+
+This separation keeps planning, writing, and consistency control from competing in one oversized prompt.
 
 ## Architecture
 
 This repository contains two cooperating local apps:
 
-- `rag-agent/`: novel ingestion, indexing, character profile extraction, chapter summaries, and RAG retrieval.
-- `Story-game/`: interactive fan-fiction story UI, story bible generation, prompt orchestration, and upload proxy.
+- `rag-agent/`: novel ingestion, encoding cleanup, chapter splitting, character extraction, summaries, indexing, and retrieval.
+- `Story-game/`: interactive story UI, upload proxy, character selection, world transformation, Story Bible generation, and branching story generation.
 
-Users open `Story-game` in the browser. `rag-agent` still runs as the internal analysis service.
+Users open `Story-game` in the browser. `rag-agent` remains the internal analysis and retrieval service.
 
 ## Local Setup
 
-### rag-agent
+### 1. Start rag-agent
 
 ```bash
 cd rag-agent
@@ -47,9 +94,13 @@ npm install
 npm start
 ```
 
-Default URL: `http://localhost:3000`
+Default URL:
 
-After copying `.env.example`, edit `rag-agent/.env`:
+```text
+http://localhost:3000
+```
+
+Configure `rag-agent/.env`:
 
 ```bash
 API_KEY=your_real_api_key
@@ -65,7 +116,7 @@ TIMEOUT=60000
 INDEX_FILE=./index.json
 ```
 
-### Story-game
+### 2. Start Story-game
 
 ```bash
 cd Story-game
@@ -74,9 +125,13 @@ npm install
 npm start
 ```
 
-Default URL: `http://localhost:3002`
+Default URL:
 
-After copying `.env.example`, edit `Story-game/.env`:
+```text
+http://localhost:3002
+```
+
+Configure `Story-game/.env`:
 
 ```bash
 API_KEY=your_real_api_key
@@ -88,36 +143,22 @@ PORT=3002
 RAG_AGENT_URL=http://localhost:3000
 ```
 
-Important: the current `Story-game` frontend also loads `Story-game/config.js` in the browser. For local testing, keep it as a placeholder or replace it only with a temporary test key. Do not put production API keys in browser code.
+Then open:
 
-## Run Order
-
-Start `rag-agent` first, then start `Story-game`.
-
-```bash
-cd rag-agent
-npm start
+```text
+http://localhost:3002
 ```
-
-In a second terminal:
-
-```bash
-cd Story-game
-npm start
-```
-
-Open `http://localhost:3002` for the story UI. The RAG service should remain running at `http://localhost:3000`.
 
 ## Generated Files
 
-- `Story-game/story_bible/`: generated story bible JSON files.
-- `Story-game/story_runs/`: generated story run JSON files for testing and review.
-- `rag-agent/uploads/`: uploaded source documents and cleaned text versions.
+- `Story-game/story_bible/`: generated Story Bible files.
+- `Story-game/story_runs/`: generated chapter text, player choices, and story state for testing.
+- `rag-agent/uploads/`: uploaded documents and cleaned text files.
 - `rag-agent/chapters/`: extracted character profile files.
-- `rag-agent/index.json`: generated local index.
+- `rag-agent/index.json`: generated local retrieval index.
 
 ## Notes
 
-- Do not commit `.env`, uploaded novels, generated indexes, generated story bibles, or generated story runs.
-- `rag-agent/.env.example` and `Story-game/.env.example` are templates. Copy them to `.env` and replace placeholders locally.
-- For production, proxy LLM calls through the server instead of exposing API keys in browser code.
+- Do not commit `.env`, uploaded novels, generated indexes, generated Story Bibles, or story runs.
+- `Story-game/config.js` is still loaded by the browser for local testing. Do not place production API keys in browser code.
+- For production use, route all LLM calls through a server-side proxy.

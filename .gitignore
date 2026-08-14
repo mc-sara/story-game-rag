@@ -17,3 +17,6 @@ Story-game/story_runs/*.json
 # OS/editor files
 .DS_Store
 *.log
+
+# Local session logs (agent conversation records, not for the public repo)
+session.jsonl

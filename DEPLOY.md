@@ -50,9 +50,9 @@ Supabase（免费层）＝ 持久化数据层（可选接入，逐步迁移）�
 1. GitHub 仓库已建好（`mc-sara/story-game-rag`，含 `rag-agent/` 与 `Story-game/` 两个子目录），直接 push 即可。
 2. ⚠️ **`Story-game/.gitignore` 尚未进入本 repo**（只在旧目录补过）：先把文件加进仓库再提交，保护 `.env` 里的真实 API Key。
 3. **RAG 语料种子**：`rag-agent/.gitignore` 忽略了 `index.json`（7.6MB 索引）与 `uploads/`、`data/`，直接 push 后 RAG 是空库。
-   二选一：
-   - 种子进仓库（推荐，开箱即用）：`git add -f rag-agent/index.json`
-   - 或部署后打开 rag-agent 页面重新上传小说，等索引重建。
+   二选一（**本 repo 已定：路线 1**）：
+   - ✅ **路线 1（已选）**：部署后打开 rag-agent 页面重新上传小说，等索引重建（`index.json` 不进公网仓库，避免 7.6MB 全文入库）。
+   - 或种子进仓库（开箱即用）：`git add -f rag-agent/index.json`
 4. 本地确认 `npm start` 均可运行（已在本地跑通）。
 
 ### Phase 1 — Railway 部署两个服务（$5 试用）

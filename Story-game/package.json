@@ -2,6 +2,7 @@
   "name": "Story-game",
   "version": "1.0.0",
   "description": "同人文互动故事生成器",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev":   "npx serve . -p 3002"

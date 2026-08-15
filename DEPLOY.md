@@ -62,11 +62,11 @@ Supabase（免费层）＝ 持久化数据层（可选接入，逐步迁移）�
 2. New Project → Deploy from GitHub repo → 授权仓库。
 3. 创建第一个服务：选 `rag-agent/` 目录（Service → Settings → Source → Root Directory 填 `rag-agent`）。Nixpacks 自动识别 Node。
 4. **Variables**（把 `.env` 里的值填进去，不要把 `.env` 提交）：
-   - `API_KEY`、`BASE_URL=https://api.deepseek.com`、`MODEL`、`MAX_TOKENS`、`TEMPERATURE`
+   - `API_KEY`（DeepSeek Key）、`BASE_URL=https://api.deepseek.com`、`MODEL=deepseek-v4-flash`、`MAX_TOKENS`、`TEMPERATURE`
    - `PORT` 不用填，Railway 自动注入。
 5. 同法创建第二个服务 `Story-game/`（Root Directory 填 `Story-game`）。
-   - Variables：`API_KEY` 等同上，再加：
-   - `RAG_AGENT_URL=https://${{rag-agent.RAILWAY_PRIVATE_DOMAIN}}`（**推荐：私有网络域名，免 egress 费，且不占用公网自定义域名额度**；Service Variables 里可直接引用同项目服务的私有域名）
+   - Variables：`API_KEY`、`BASE_URL=https://api.deepseek.com`、`MODEL=deepseek-v4-flash`（LLM 调用已走服务端代理，Key 不暴露给浏览器），再加：
+   - `RAG_AGENT_URL=http://${{rag-agent.RAILWAY_PRIVATE_DOMAIN}}:8080`（**明文 HTTP + 显式端口，端口以 rag-agent 启动日志为准**；私有网络免 egress 费、不占公网自定义域名额度）
 6. 验证：Story-game 用 `Generate Domain` 生成的 URL 打开首页、生成一次故事（验证 RAG_AGENT_URL 通）；rag-agent 用它的生成 URL 测 `GET /health`、上传/问答各一次（验证 DeepSeek 出网通）。生成的 `*.up.railway.app` 域名不占自定义域名额度，正式对外入口只有 `story.tongrentxt.bond`。
 7. （可选）数据持久化：试用/免费计划自带 0.5GB Volume，挂载到服务，把 `INDEX_FILE`、`uploads/`、`story_runs/` 等指过去；否则重新部署会清空运行期数据（见"坑"）。
 

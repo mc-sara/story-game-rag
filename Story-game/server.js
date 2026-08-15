@@ -1,9 +1,15 @@
-const http = require('http');
-const fs   = require('fs');
-const path = require('path');
+const http  = require('http');
+const https = require('https');
+const fs    = require('fs');
+const path  = require('path');
 
 const STORY_BIBLE_DIR = path.join(__dirname, 'story_bible');
 const RAG_AGENT_URL = process.env.RAG_AGENT_URL || 'http://localhost:3000';
+
+// LLM（DeepSeek）服务端配置：真实 Key 只从环境变量读取，绝不进前端/仓库
+const API_KEY  = process.env.API_KEY || '';
+const BASE_URL = process.env.BASE_URL || 'https://api.deepseek.com';
+const MODEL    = process.env.MODEL || 'deepseek-v4-flash';
 
 // 确保目录存在
 if (!fs.existsSync(STORY_BIBLE_DIR)) {
@@ -154,6 +160,61 @@ async function proxyToRagAgent(req, res) {
 }
 
 // ─────────────────────────────────────────
+// POST /api/chat-completions — 服务端代理 DeepSeek（隐藏 API Key）
+// ─────────────────────────────────────────
+function handleChatCompletions(req, res) {
+  readBody(req).then(function(rawBody) {
+    var payload;
+    try {
+      payload = JSON.parse(rawBody || '{}');
+    } catch (e) {
+      payload = {};
+    }
+    // 模型统一走服务端环境变量，前端传的 model 以这里为准
+    payload.model = MODEL;
+    var body = JSON.stringify(payload);
+
+    var upstream = BASE_URL.replace(/\/+$/, '') + '/chat/completions';
+    var parsed = new URL(upstream);
+    var isHttps = parsed.protocol === 'https:';
+    var transport = isHttps ? https : http;
+
+    var options = {
+      hostname: parsed.hostname,
+      port:     parsed.port || (isHttps ? 443 : 80),
+      path:     parsed.pathname + parsed.search,
+      method:   'POST',
+      headers:  {
+        'Content-Type':  'application/json',
+        'Accept':        'application/json',
+        'Authorization': 'Bearer ' + API_KEY,
+        'Content-Length': Buffer.byteLength(body)
+      }
+    };
+
+    var proxyReq = transport.request(options, function(proxyRes) {
+      var chunk = '';
+      proxyRes.on('data', function(c) { chunk += c; });
+      proxyRes.on('end', function() {
+        res.writeHead(proxyRes.statusCode, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(chunk);
+      });
+    });
+
+    proxyReq.on('error', function(err) {
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: '无法连接 LLM API: ' + err.message }));
+    });
+
+    proxyReq.write(body);
+    proxyReq.end();
+  });
+}
+
+// ─────────────────────────────────────────
 // 路由
 // ─────────────────────────────────────────
 var server = http.createServer(async function(req, res) {
@@ -170,6 +231,8 @@ var server = http.createServer(async function(req, res) {
     handleSaveBible(req, res);
   } else if (req.method === 'POST' && req.url === '/api/debug-log') {
     handleDebugLog(req, res);
+  } else if (req.method === 'POST' && req.url === '/api/chat-completions') {
+    handleChatCompletions(req, res);
   } else if (req.method === 'GET' && (req.url.startsWith('/api/novels') || req.url.startsWith('/api/novel-characters'))) {
     proxyToRagAgent(req, res);
   } else {

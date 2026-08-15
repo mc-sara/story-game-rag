@@ -1628,11 +1628,10 @@
         max_completion_tokens: maxTokens
       });
 
-      var res = await fetch(CONFIG.BASE_URL + '/chat/completions', {
+      var res = await fetch('/api/chat-completions', {
         method:  'POST',
         headers: {
-          'Content-Type':  'application/json',
-          'Authorization': 'Bearer ' + CONFIG.API_KEY
+          'Content-Type':  'application/json'
         },
         body: body
       });

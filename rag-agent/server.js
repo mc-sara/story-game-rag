@@ -33,7 +33,7 @@ const { conversationStore } = require('./rag/conversationStore.js');
 const { extractCharacterProfiles } = require('./rag/extractor.js');
 
 // 角色 profile 文件存储目录
-const PROFILES_DIR = path.join(__dirname, 'chapters');
+const PROFILES_DIR = CONFIG.PROFILES_DIR;
 if (!fs.existsSync(PROFILES_DIR)) {
   fs.mkdirSync(PROFILES_DIR, { recursive: true });
 }
@@ -55,11 +55,11 @@ app.use((req, res, next) => {
 });
 
 const upload = multer({
-  dest: path.join(__dirname, 'uploads'),
+  dest: CONFIG.UPLOADS_DIR,
   limits: { fileSize: 50 * 1024 * 1024 }  // 50MB
 });
 
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = CONFIG.UPLOADS_DIR;
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }

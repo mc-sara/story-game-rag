@@ -164,8 +164,9 @@ ${batchText}`;
     }
 
     // 批次间延迟（API 限流窗口内连续发请求容易超时）
+    console.log(`[Extractor] 角色片段批次 ${Math.floor(i / BATCH) + 1}/${Math.ceil(chunks.length / BATCH)} 完成`);
     if (i + BATCH < chunks.length) {
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 8000));
     }
   }
 

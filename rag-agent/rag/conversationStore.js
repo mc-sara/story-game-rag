@@ -6,7 +6,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+const CONFIG = require('../config.js');
+
+const DATA_DIR = CONFIG.DATA_DIR;
 const HISTORY_FILE = path.join(DATA_DIR, 'conversations.json');
 
 // 确保 data 目录存在

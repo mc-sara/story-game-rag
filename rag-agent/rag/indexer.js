@@ -37,7 +37,7 @@ const { randomUUID } = require('crypto');
 const uuidv4 = () => randomUUID();
 
 const CONFIG = require('../config.js');
-const PROFILES_DIR = path.join(__dirname, '..', 'chapters');
+const PROFILES_DIR = CONFIG.PROFILES_DIR;
 if (!fs.existsSync(PROFILES_DIR)) {
   fs.mkdirSync(PROFILES_DIR, { recursive: true });
 }

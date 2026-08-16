@@ -54,7 +54,9 @@ function callMiMo(messages, options = {}) {
             const parsed = JSON.parse(data);
             const retryable = res.statusCode === 429 || (res.statusCode >= 500 && res.statusCode < 600);
             if (retryable && n < MAX_RETRIES) {
-              setTimeout(() => attempt(n + 1), BASE_DELAY * Math.pow(2, n));
+              const delay = BASE_DELAY * Math.pow(2, n);
+              console.warn(`[Extractor] HTTP ${res.statusCode}，${delay / 1000}s 后重试（第 ${n + 1} 次）`);
+              setTimeout(() => attempt(n + 1), delay);
               return;
             }
             if (res.statusCode >= 400) {
@@ -68,8 +70,11 @@ function callMiMo(messages, options = {}) {
         });
       });
       req.on('error', err => {
-        if (n < MAX_RETRIES) setTimeout(() => attempt(n + 1), BASE_DELAY * Math.pow(2, n));
-        else reject(err);
+        if (n < MAX_RETRIES) {
+          const delay = BASE_DELAY * Math.pow(2, n);
+          console.warn(`[Extractor] 请求错误（${err.message}），${delay / 1000}s 后重试（第 ${n + 1} 次）`);
+          setTimeout(() => attempt(n + 1), delay);
+        } else reject(err);
       });
       req.setTimeout(120000, () => { req.destroy(); reject(new Error('请求超时')); });
       req.write(body);

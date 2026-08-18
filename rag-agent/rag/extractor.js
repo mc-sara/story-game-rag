@@ -32,7 +32,8 @@ function callMiMo(messages, options = {}) {
       messages,
       temperature:        options.temperature ?? 0.3,
       max_completion_tokens: options.maxTokens ?? 1024,
-      stream:             false
+      stream:             false,
+      thinking:           { type: 'disabled' }
     });
 
     function attempt(n) {

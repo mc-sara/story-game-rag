@@ -20,3 +20,7 @@ Story-game/story_runs/*.json
 
 # Local session logs (agent conversation records, not for the public repo)
 session.jsonl
+
+# Local diagnostics / RAG index backups (contain novel full text)
+.rag-backup/
+rag-agent/chapters/

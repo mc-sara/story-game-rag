@@ -154,7 +154,9 @@ class Indexer {
     }));
 
     // 先做章节摘要（token 少，优先完成）
+    let __t = Date.now();
     const chapterSummaries = await summarizeAllChapters(chaptersWithText);
+    console.log(`[TIMING] 章节摘要: ${Date.now() - __t}ms`);
 
     // 摘要结果立即写入 doc，避免后续角色提取失败时白做
     const summaryChunks = chapterSummaries.map(s => ({
@@ -169,17 +171,25 @@ class Indexer {
 
     doc.chapterSummaries = chapterSummaries;
     doc.chunks = [...doc.chunks, ...summaryChunks];
+    __t = Date.now();
     embedder.buildIndex(this.documents.flatMap(d => d.chunks));
+    console.log(`[TIMING] buildIndex(摘要后): ${Date.now() - __t}ms`);
+    __t = Date.now();
     await this._saveIndexStream();
+    console.log(`[TIMING] saveIndex(摘要后): ${Date.now() - __t}ms`);
 
     console.log(`[Indexer] 小说 "${docName}" 章节摘要完成：${chapterSummaries.length} 个`);
 
     // 最后做角色提取（采样量约 8000 字，最容易超时）
+    __t = Date.now();
     const { characters, relationships } = await extractCharacters(fullText);
+    console.log(`[TIMING] extractCharacters: ${Date.now() - __t}ms`);
 
     // 提取角色 profile（7维度硬约束数据）
     const knownNames = characters.map(c => c.name);
+    __t = Date.now();
     const characterProfiles = await extractCharacterProfiles(docId, fullText, chaptersWithText, knownNames);
+    console.log(`[TIMING] extractCharacterProfiles: ${Date.now() - __t}ms`);
 
     // 保存到独立文件
     const profileFile = path.join(PROFILES_DIR, `${docId}_profiles.json`);
@@ -192,8 +202,12 @@ class Indexer {
     doc.characterProfiles = characterProfiles;
     doc.chunks = [...doc.chunks, ...summaryChunks];
 
+    __t = Date.now();
     embedder.buildIndex(this.documents.flatMap(d => d.chunks));
+    console.log(`[TIMING] buildIndex(角色后): ${Date.now() - __t}ms`);
+    __t = Date.now();
     await this._saveIndexStream();
+    console.log(`[TIMING] saveIndex(角色后): ${Date.now() - __t}ms`);
 
     console.log(`[Indexer] 小说 "${docName}" 分析完成：` +
       `${characters.length} 个角色，${characterProfiles.length} 个 profile，${chapterSummaries.length} 个章节摘要`);

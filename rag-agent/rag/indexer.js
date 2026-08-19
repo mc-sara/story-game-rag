@@ -266,6 +266,20 @@ class Indexer {
     return true;
   }
 
+  renameDocument(docId, newName) {
+    const doc = this.documents.find(d => d.id === docId);
+    if (!doc) return false;
+    const name = String(newName || '').trim();
+    if (!name) return false;
+    doc.name = name;
+    if (Array.isArray(doc.chunks)) {
+      doc.chunks.forEach(c => { if (c) c.docName = name; });
+    }
+    this._saveIndexStream();
+    console.log(`[Indexer] 文档已重命名为 "${name}"`);
+    return true;
+  }
+
   listDocuments() {
     return this.documents.map(d => ({
       id: d.id,

@@ -253,6 +253,14 @@ app.delete('/documents/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// 重命名文档（供前端上传/改名使用）
+app.patch('/documents/:id', (req, res) => {
+  const { name } = req.body || {};
+  const ok = indexer.renameDocument(req.params.id, name);
+  if (!ok) return res.status(400).json({ error: '文档不存在或名称为空' });
+  res.json({ success: true });
+});
+
 app.delete('/documents', (req, res) => {
   indexer.clearAll();
   res.json({ success: true });

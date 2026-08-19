@@ -131,6 +131,7 @@ Supabase（免费层）＝ 持久化数据层（可选接入，逐步迁移）�
 9. **Trial 只允许 1 个自定义域名**：`story.` 与 `rag.` 两个子域在 Trial 上行不通；单域名方案下 rag-agent 走私有网络（免 egress），升 Hobby（$5/月，每服务 2 个）后再补 `api.tongrentxt.bond`。
 10. **自定义域名必须同时加 CNAME + TXT 两条记录**：Railway 用 TXT 验证所有权，缺 TXT 即使 CNAME 生效也会 404 / 无法验证。
 11. **阿里云国际域名需实名认证**：`tongrentxt.bond` 未实名会被阿里云暂停解析；Railway 方案**不需要 ICP 备案**（`.bond` 已获工信部许可，将来上大陆 CDN 时再备）。
+12. **小说分析慢**：角色提取是 43 批串行 DeepSeek 调用，`deepseek-v4-flash` 默认开启 thinking（reasoning token 被代码无视却拖慢速度）。已加 `thinking:{"type":"disabled"}`（本地实测 59→29.5 分钟）。Railway 上另有 ~9× 环境惩罚（CPU 空闲、疑似连接被重置重试），见 session 记录。
 
 ---
 
